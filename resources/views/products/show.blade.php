@@ -118,7 +118,10 @@
                 amount: $('.cart_amount input').val(),
             })
             .then(function () {
-                swal('加入购物车成功','','success');
+                swal('加入购物车成功','','success')
+                .then(function () {
+                    location.href = '{{ route('cart.index') }}'
+                });
             },function (error) {
                 // http 状态码为 401 代表用户未登录
                 if(error.response.status === 401){
