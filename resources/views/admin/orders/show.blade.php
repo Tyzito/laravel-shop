@@ -49,6 +49,7 @@
                 <!--订单发货开始-->
                 <!--如果订单未发货，展示发货表单-->
                 @if($order->ship_status === \App\Models\Order::SHIP_STATUS_PENDING)
+                    @if($order->refund_status !== \App\Models\Order::REFUND_STATUS_SUCCESS)
                     <tr>
                         <td colspan="4">
                             <form action="{{ route('admin.orders.ship',[$order->id]) }}" method="post" class="form-inline">
@@ -75,6 +76,7 @@
                             </form>
                         </td>
                     </tr>
+                    @endif
                 @else
                 <!--如果已发货，显示物流公司和物流单号-->
                 <tr>
@@ -105,6 +107,42 @@
 
 <script>
 $(function () {
+    // 同意按钮点击事件
+    $('#btn-refund-agree').click(function () {
+        swal({
+            title: '确认要将款项退给用户？',
+            type: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '确认',
+            cancelButtonText: '取消',
+            showLoaderOnConfirm: true,
+            preConfirm: function () {
+                // laravel-admin 没有 axios，使用 jquery 的 ajax 方法来请求
+                return $.ajax({
+                    url: '{{ route('admin.orders.handle_refund',[$order->id]) }}',
+                    type: 'post',
+                    data: JSON.stringify({ // 将请求变成字符串
+                        agree:true, // 同意退款
+                        _token:LA.token, // laravel-admin 可以通过 LA.token 获取 token
+                    }),
+                    contentType: 'application/json', // 请求的数据格式为 json
+                });
+            },
+            allowOutsideClick: false,
+        }).then(function (ret) {
+            // 如果用户点击的取消按钮，则不做任何操作
+            if(ret.dismiss === 'cancel'){
+                return;
+            }
+            swal({
+                title: '操作成功',
+                type: 'success'
+            }).then(function () {
+                location.reload();
+            });
+        });
+    });
+
     // 不同意按钮点击事件
     $('#btn-refund-disagree').click(function () {
         swal({
@@ -134,7 +172,7 @@ $(function () {
             allowedInText: false,
         }).then(function (ret) {
             // 如果用户点击的取消按钮，则不做任何操作
-            if(ret.dismiss == 'cancel'){
+            if(ret.dismiss === 'cancel'){
                 return;
             }
             swal({

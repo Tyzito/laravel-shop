@@ -53,7 +53,7 @@
                                                     @if($order->refund_status === \App\Models\Order::REFUND_STATUS_PENDING)
                                                         已支付
                                                     @else
-                                                        {{ \App\Models\Order::$refundStatusMap[$order->refund_stauts] }}
+                                                        {{ \App\Models\Order::$refundStatusMap[$order->refund_status] }}
                                                     @endif
                                                 @elseif($order->closed)
                                                     已关闭
