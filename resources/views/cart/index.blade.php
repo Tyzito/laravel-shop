@@ -135,7 +135,8 @@
            var req = {
                address_id:$('#order-form').find('select[name=address]').val(),
                items:[],
-               remark:$('#order-form').find('textarea[name=remark]').val()
+               remark:$('#order-form').find('textarea[name=remark]').val(),
+               coupon_code:$('input[name=coupon_code]').val(),
            };
 
            $('table tr[data-id]').each(function () {
