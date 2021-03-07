@@ -16,6 +16,11 @@ class Product extends Model
         'on_sale' => 'boolean',
     ];
 
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
     // 与商品 SKU 关联
     public function skus()
     {
