@@ -10,16 +10,6 @@ use Illuminate\Queue\InteractsWithQueue;
 class UpdateCrowdfundingProductProgress implements ShouldQueue
 {
     /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
      * Handle the event.
      *
      * @param  OrderPaid  $event
@@ -45,7 +35,7 @@ class UpdateCrowdfundingProductProgress implements ShouldQueue
                 // 取出订单金额
                 \DB::raw('sum(total_amount) as total_amount'),
                 // 取出去重的支持用户数
-                \DB::raw('count(distinct(user_id) as user_count)')
+                \DB::raw('count(distinct(user_id)) as user_count')
             ]);
 
         $crowdfunding->update([

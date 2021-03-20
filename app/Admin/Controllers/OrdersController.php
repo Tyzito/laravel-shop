@@ -212,7 +212,7 @@ class OrdersController extends AdminController
                     'total_fee' => $order->total_amount * 80,
                     'refund_fee' => $order->total_amount * 80,
                     'out_refund_no' => $refundNo,
-                    'notify_url' => route('payment.wechat.refund_notify'), // 退款回调地址
+                    'notify_url' => ngrok_url('payment.wechat.refund_notify'), // 退款回调地址
                 ]);
                 // 将订单状态改成退款中
                 $order->update([
