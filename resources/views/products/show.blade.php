@@ -18,19 +18,26 @@
                         <div class="have-text">已筹到</div>
                         <div class="total-amount"><span class="symbol">￥</span>{{ $product->crowdfunding->total_amount }}</div>
                         <div class="progress">
-                            <div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="{{ $product->crowdfunding->percent }}" aria-valuemin="0" aria-valuemax="100" style="min-width: lem; width: {{ min($product->crowdfunding->percent, 100) }}">
+                            <div class="progress-bar progress-bar-success progress-bar-striped"
+                                 role="progressbar"
+                                 aria-valuenow="{{ $product->crowdfunding->percent }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100"
+                                 style="min-width: 1em; width: {{ min($product->crowdfunding->percent, 100) }}%">
                             </div>
                         </div>
                         <div class="progress-info">
                             <span class="current-progress">当前进度：{{ $product->crowdfunding->percent }}%</span>
                             <span class="float-right user-count">{{ $product->crowdfunding->user_count }}名支持者</span>
                         </div>
-                        @if($product->crowdfunding->status === \App\Models\CrowdfundingProduct::STATUS_FUNDING)
+                        <!-- 如果众筹状态是众筹中，则输出提示语 -->
+                        @if ($product->crowdfunding->status === \App\Models\CrowdfundingProduct::STATUS_FUNDING)
                             <div>此项目必须在
                                 <span class="text-red">{{ $product->crowdfunding->end_at->format('Y-m-d H:i:s') }}</span>
                                 前得到
                                 <span class="text-red">￥{{ $product->crowdfunding->target_amount }}</span>
                                 的支持才可成功，
+                                <!-- Carbon 对象的 diffForHumans() 方法可以计算出与当前时间的相对时间，更人性化 -->
                                 筹款将在<span class="text-red">{{ $product->crowdfunding->end_at->diffForHumans(now()) }}</span>结束！
                             </div>
                         @endif
@@ -69,11 +76,13 @@
 
                     @if($product->type === \App\Models\Product::TYPE_CROWDFUNDING)
                         @if(Auth::check())
-                            @if($product->crowdfunding->status === \App\Models\CrowdfundingProduct::STATUS_FUNDING)
-                                <button class="btn btn-primary btn-crowdfunding">参与众筹</button>
-                            @else
-                                <button class="btn btn-primary disabled">{{ \App\Models\CrowdfundingProduct::$statusMap[$product->crowdfunding->status] }}</button>
-                            @endif
+                                @if($product->crowdfunding->status === \App\Models\CrowdfundingProduct::STATUS_FUNDING)
+                                    <button class="btn btn-primary btn-crowdfunding">参与众筹</button>
+                                @else
+                                    <button class="btn btn-primary disabled">
+                                        {{ \App\Models\CrowdfundingProduct::$statusMap[$product->crowdfunding->status] }}
+                                    </button>
+                                @endif
                         @else
                             <a class="btn btn-primary" href="{{ route('login') }}">请先登录</a>
                         @endif

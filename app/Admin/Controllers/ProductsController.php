@@ -9,13 +9,6 @@ use Encore\Admin\Grid;
 
 class ProductsController extends CommonProductsController
 {
-    /**
-     * Title for current resource.
-     *
-     * @var string
-     */
-    protected $title = '商品';
-
     public function getProductType()
     {
         return Product::TYPE_NORMAL;

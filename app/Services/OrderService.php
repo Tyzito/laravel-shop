@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\CouponCodeUnavailableException;
+use App\Exceptions\InternalException;
 use App\Exceptions\InvalidRequestException;
 use App\Http\Requests\OrderRequest;
 use App\Jobs\CloseOrder;
@@ -89,7 +90,7 @@ class OrderService
     }
 
     // 用于实现众筹商品下单逻辑
-    public function crowfunding(User $user, UserAddress $address, ProductSku $sku, $amount)
+    public function crowdfunding(User $user, UserAddress $address, ProductSku $sku, $amount)
     {
         // 开启事务
         $order = DB::transaction(function () use ($amount, $sku, $user, $address) {
@@ -186,7 +187,7 @@ class OrderService
                 break;
             default:
                 // 原则上不可能出现，这里为了代码的健壮性
-                throw new InvalidRequestException('未知订单支付方式'.$order->payment_method);
+                throw new InternalException('未知订单支付方式'.$order->payment_method);
                 break;
         }
     }

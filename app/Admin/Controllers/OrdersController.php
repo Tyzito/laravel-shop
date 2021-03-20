@@ -148,8 +148,9 @@ class OrdersController extends AdminController
         }
 
         // 众筹订单只在众筹成功后发货
-        if($order->type === Order::TYPE_CROWDFUNDING && $order->items[0]->product->crowdfunding->status !== CrowdfundingProduct::STATUS_SUCCESS){
-            throw new InvalidRequestException('众筹订单只能在众筹成功后发货');
+        if ($order->type === Order::TYPE_CROWDFUNDING &&
+            $order->items[0]->product->crowdfunding->status !== CrowdfundingProduct::STATUS_SUCCESS) {
+            throw new InvalidRequestException('众筹订单只能在众筹成功之后发货');
         }
 
         $data = $this->validate($request,[
@@ -170,7 +171,7 @@ class OrdersController extends AdminController
     }
 
     // 处理退款
-    public function handleRefund(Order $order,HandleRefundRequest $request, OrderService $orderService)
+    public function handleRefund(Order $order, HandleRefundRequest $request, OrderService $orderService)
     {
         // 判断订单状态是否正确
         if($order->refund_status !== Order::REFUND_STATUS_APPLIED){

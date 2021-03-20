@@ -10,13 +10,6 @@ use Encore\Admin\Grid;
 
 class CrowdfundingProductsController extends CommonProductsController
 {
-    /**
-     * Title for current resource.
-     *
-     * @var string
-     */
-    protected $title = '众筹商品';
-
     public function getProductType()
     {
         return Product::TYPE_CROWDFUNDING;

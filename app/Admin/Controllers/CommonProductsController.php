@@ -55,7 +55,7 @@ abstract class CommonProductsController extends AdminController
         })->ajax('/admin/api/categories?is_directory=0');
 
         // 创建一个选择图片的框
-        $form->image('image','选择图片')->rules('required|image');
+        $form->image('image','封面图片')->rules('required|image');
         // 创建一个富文本编辑器
         $form->quill('description','商品描述')->rules('required');
         // 创建一组单选框
@@ -65,7 +65,7 @@ abstract class CommonProductsController extends AdminController
         $this->customForm($form);
 
         // 直接添加一组关联模型
-        $form->hasMany('skus','SKU 列表',function (Form\NestedForm $form){
+        $form->hasMany('skus','商品 SKU',function (Form\NestedForm $form){
             $form->text('title','SKU 名称')->rules('required');
             $form->text('description','SKU 描述')->rules('required');
             $form->text('price','单价')->rules('required|numeric|min:0.01');
