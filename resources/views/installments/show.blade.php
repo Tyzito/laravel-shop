@@ -80,11 +80,11 @@
                                 <td>
                                     <!--如果是未还款-->
                                     @if(is_null($item->paid_at))
-                                        {{--@if($item->is_overdue)
+                                        @if($item->is_overdue)
                                             <span class="overdue">已逾期</span>
                                         @else
                                             <span class="needs-repy">待还款</span>
-                                        @endif--}}
+                                        @endif
                                     @else
                                         <span class="repaid">已还款</span>
                                     @endif
