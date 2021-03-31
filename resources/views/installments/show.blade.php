@@ -103,3 +103,19 @@
         </div>
     </div>
 @endsection
+@section('scriptsAfterJs')
+    <script>
+        $(document).ready(function (){
+            $('#btn-wechat').click(function (){
+                swal({
+                    content: $('<img src="{{ route('installments.wechat', ['installment' => $installment->id]) }}" />')[0],
+                    buttons: ['关闭', '已完成付款'],
+                }).then(function (){
+                    if(result){
+                        location.reload();
+                    }
+                })
+            });
+        });
+    </script>
+@endsection
