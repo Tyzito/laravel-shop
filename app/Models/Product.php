@@ -23,6 +23,11 @@ class Product extends Model
         'on_sale' => 'boolean',
     ];
 
+    public function properties()
+    {
+        return $this->hasMany(ProductProperty::class);
+    }
+
     public function crowdfunding()
     {
         return $this->hasOne(CrowdfundingProduct::class);
@@ -47,5 +52,12 @@ class Product extends Model
         }
 
         return Storage::disk('public')->url($this->attributes['image']);
+    }
+
+    public function getGroupedPropertiesAttribute()
+    {
+        return $this->properties->groupBy('name')->map(function ($properties){
+            return $properties->pluck('value')->all();
+        });
     }
 }
