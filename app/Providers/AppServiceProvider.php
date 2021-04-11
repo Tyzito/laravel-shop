@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Monolog\Logger;
 use Yansongda\Pay\Pay;
+use Elasticsearch\ClientBuilder as ESClientBuilder;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -48,6 +49,18 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return Pay::wechat($config);
+        });
+
+        // 注册一个名为 es 的单例
+        $this->app->singleton('es', function (){
+            $builder = ESClientBuilder::create()->setHosts(config('database.elasticsearch.hosts'));
+
+            // 如果是开发环境
+            if(app()->environment() === 'local'){
+                $builder->setLogger(app('log')->driver());
+            }
+
+            return $builder->build();
         });
     }
 
