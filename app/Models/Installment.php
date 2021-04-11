@@ -67,4 +67,24 @@ class Installment extends Model
         \Log::warning('find installment no failed');
         return false;
     }
+
+    public function refreshRefundStatus()
+    {
+        // 设定一个标志位
+        $allSuccess = true;
+        // 重新家长items,保证与数据库中的数据同步
+        $this->load(['items']);
+        foreach ($this->items as $item) {
+            if ($item->paid_at && $item->refund_status !== InstallmentItem::REFUND_STATUS_SUCCESS) {
+                $allSuccess = false;
+                break;
+            }
+        }
+        // 如果所有退款都成功，则将对应商品订单的退款状态修改为退款成功
+        if ($allSuccess) {
+            $this->order->update([
+                'refund_status' => Order::REFUND_STATUS_SUCCESS,
+            ]);
+        }
+    }
 }
