@@ -6,6 +6,7 @@ use App\Exceptions\InvalidRequestException;
 use App\Models\Category;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\SearchBuilders\ProductSearchBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -17,43 +18,12 @@ class ProductsController extends Controller
         $page = $request->input('page', 1);
         $perPage = 16;
 
-        // 构建查询
-        $params = [
-            'index' => 'products',
-            'body' => [
-                'from' => ($page -1) * $perPage, // 通过当前页数乘以每页数量计算偏移量
-                'size' => $perPage,
-                'query' => [
-                    'bool' => [
-                        'filter' => [
-                            ['term' => ['on_sale' => true]],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        // 是否有order提交
-        if($order = $request->input('order', '')){
-            // 是否以 asc 或 desc 结尾
-            if(preg_match('/^(.+)_(asc|desc)$/', $order, $m)){
-                if(in_array($m[1], ['price', 'sold_count', 'rating'])){
-                    $params['body']['sort'] = [[$m[1] => $m[2]]];
-                }
-            }
-        }
+        // 新建查询构造器对象，设置只搜索上架商品，设置分页
+        $builder = (new ProductSearchBuilder())->onSale()->paginate($perPage, $page);
 
         // 类目筛选
         if ($request->input('category_id') && $category = Category::find($request->input('category_id'))) {
-            if ($category->is_directory) {
-                // 如果是一个父类目，则使用 category_path 来筛选
-                $params['body']['query']['bool']['filter'][] = [
-                    'prefix' => ['category_path' => $category->path.$category->id.'-'],
-                ];
-            } else {
-                // 否则直接通过 category_id 筛选
-                $params['body']['query']['bool']['filter'][] = ['term' => ['category_id' => $category->id]];
-            }
+            $builder->category($category);
         }
 
         // 关键字
@@ -61,49 +31,12 @@ class ProductsController extends Controller
             // 将搜索词拆分成数组，过滤掉空项
             $keywords = array_filter(explode(' ', $search));
 
-            foreach($keywords as $keyword){
-                $params['body']['query']['bool']['must'] = [
-                    [
-                        'multi_match' => [
-                            'query' => $keyword,
-                            'fields' => [
-                                'title^3',
-                                'long_title^2',
-                                'category^2',
-                                'description',
-                                'skus_title',
-                                'skus_description',
-                                'properties_value',
-                            ],
-                        ],
-                    ],
-                ];
-            }
+            $builder->keywords($keywords);
         }
 
         // 只有当用户有搜索关键词或者使用了类目筛选的时候才会做聚合
         if($search || isset($category)){
-            $params['body']['aggs'] = [
-                'properties' => [
-                    'nested' => [
-                        'path' => 'properties',
-                    ],
-                    'aggs' => [
-                        'properties' => [
-                            'terms' => [
-                                'field' => 'properties.name',
-                            ],
-                            'aggs' => [
-                                'value' => [
-                                    'terms' => [
-                                        'field' => 'properties.value',
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ];
+            $builder->aggregateProperties();
         }
 
         // 从用户请求的参数获取filters
@@ -116,19 +49,21 @@ class ProductsController extends Controller
                 $propertyFilters[$name] = $value;
 
                 // 添加到filter类型中
-                $params['body']['query']['bool']['filter'] = [
-                    'nested' => [
-                        'path' => 'properties',
-                        'query' => [
-                            ['term' => ['properties.name' => $name]],
-                            ['term' => ['properties.value' => $value]],
-                        ],
-                    ],
-                ];
+                $builder->propertyFilter($name, $value);
             }
         }
 
-        $result = app('es')->search($params);
+        // 是否有order提交
+        if($order = $request->input('order', '')){
+            // 是否以 asc 或 desc 结尾
+            if(preg_match('/^(.+)_(asc|desc)$/', $order, $m)){
+                if(in_array($m[1], ['price', 'sold_count', 'rating'])){
+                    $builder->orderBy($m[1], $m[2]);
+                }
+            }
+        }
+
+        $result = app('es')->search($builder->getParams());
 
         $properties = [];
         // 如果返回的结果里 properties ，说明做了分面搜索
