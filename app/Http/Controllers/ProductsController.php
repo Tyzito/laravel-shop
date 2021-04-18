@@ -81,7 +81,72 @@ class ProductsController extends Controller
             }
         }
 
+        // 只有当用户有搜索关键词或者使用了类目筛选的时候才会做聚合
+        if($search || isset($category)){
+            $params['body']['aggs'] = [
+                'properties' => [
+                    'nested' => [
+                        'path' => 'properties',
+                    ],
+                    'aggs' => [
+                        'properties' => [
+                            'terms' => [
+                                'field' => 'properties.name',
+                            ],
+                            'aggs' => [
+                                'value' => [
+                                    'terms' => [
+                                        'field' => 'properties.value',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        // 从用户请求的参数获取filters
+        $propertyFilters = [];
+        if($filterString = $request->input('filters')){
+            $filterArray = explode('|', $filterString);
+            foreach($filterArray as $filter){
+                list($name, $value) = explode(':', $filter);
+                // 将用户筛选的属性添加的数组中
+                $propertyFilters[$name] = $value;
+
+                // 添加到filter类型中
+                $params['body']['query']['bool']['filter'] = [
+                    'nested' => [
+                        'path' => 'properties',
+                        'query' => [
+                            ['term' => ['properties.name' => $name]],
+                            ['term' => ['properties.value' => $value]],
+                        ],
+                    ],
+                ];
+            }
+        }
+
         $result = app('es')->search($params);
+
+        $properties = [];
+        // 如果返回的结果里 properties ，说明做了分面搜索
+        if(isset($result['aggregations'])){
+            // 使用 collect 将返回值转为集合
+            $properties = collect($result['aggregations']['properties']['properties']['buckets'])
+                ->map(function($bucket){
+                    // 通过map方法取出我们需要的字段
+                    return [
+                        'key' => $bucket['key'],
+                        'values' => collect($bucket['value']['buckets'])->pluck('key')->all(),
+                    ];
+                })
+                ->filter(function($property) use($propertyFilters){
+                    // 过滤掉只剩下的一个值 或者 已经在筛选条件里的属性
+                    return count($property['values']) > 1 && !isset($propertyFilters[$property['key']]);
+                });
+        }
 
         $productIds = collect($result['hits']['hits'])->pluck('_id')->all();
 
@@ -147,6 +212,8 @@ class ProductsController extends Controller
                 'order' => $order
             ],
             'category' => $category ?? null,
+            'properties' => $properties,
+            'propertyFilters' => $propertyFilters,
         ]);
     }
 
