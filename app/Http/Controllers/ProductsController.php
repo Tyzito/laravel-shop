@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\SearchBuilders\ProductSearchBuilder;
+use App\Services\ProductService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -85,10 +86,7 @@ class ProductsController extends Controller
 
         $productIds = collect($result['hits']['hits'])->pluck('_id')->all();
 
-        $products = Product::query()
-            ->whereIn('id', $productIds)
-            ->orderByRaw(sprintf("FIND_IN_SET(id, '%s')", join(',', $productIds)))
-            ->get();
+        $products = Product::query()->byIds($productIds)->get();
 
         $pager = new LengthAwarePaginator($products, $result['hits']['total']['value'], $perPage, $page, [
             'path' => route('products.index', false)
@@ -152,7 +150,7 @@ class ProductsController extends Controller
         ]);
     }
 
-    public function show(Product $product, Request $request)
+    public function show(Product $product, Request $request, ProductService $service)
     {
         // 判断商品是否已上架，如果没有上架抛出异常
         if(!$product->on_sale){
@@ -175,7 +173,12 @@ class ProductsController extends Controller
             ->limit(10)
             ->get();
 
-        return view('products.show',['product' => $product, 'favored' => $favored, 'reviews' => $reviews]);
+        $similarProductIds = $service->getSimilarProductIds($product, 4);
+
+        // 根据 Elasticsearch 搜索出来的商品 ID 从数据库中读取商品数据
+        $similarProducts = Product::query()->byIds($similarProductIds)->get();
+
+        return view('products.show',['product' => $product, 'favored' => $favored, 'reviews' => $reviews, 'similar' => $similarProducts]);
     }
 
     // 收藏列表
